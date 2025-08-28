@@ -30,7 +30,7 @@ detect and react to anomalous or suspicious activity (e.g., unauthorized access,
 behaviour, spoofing).*
 - **Team name** - *Mavericks*
 - **Team members (Names)** - *Varshaa Mani Venkatesh , Kaviya Sree RS , Indira S , Shri Sabarish M* 
-- **Demo Video Link** - *(Upload the Demo video on Youtube as a public or unlisted video and share the link. Google Drive uploads or any other uploads are not allowed.)*
+- **Demo Video Link** - *https://youtu.be/Kktu_spW-BU?si=vlQRojKTCxgucyHR*
 
 
 ### Project Artefacts
