@@ -21,9 +21,15 @@
 
 # Samsung EnnovateX 2025 AI Challenge Submission
 
-- **Problem Statement** - *(Must exactly match one of the nine Samsung EnnovateX AI Challenge Problem Statements)*
-- **Team name** - *(As provided during the time of registration)*
-- **Team members (Names)** - *Member 1 Name*, *Member 2 Name*, *Member 3 Name*, *Member 4 Name* 
+- **Problem Statement** - *On-Device Multi-Agent System for Behavior-Based Anomaly & Fraud Detection 
+Multi-agent system that runs fully on-device, continuously learning and modeling user 
+behaviour patterns to detect anomalies or potential fraud in real-time, without sending sensitive 
+data to external servers. The system can monitor user behaviour patterns (e.g., touch patterns, 
+typing rhythm, app usage, movement) and build local models of “normal” behaviour. It should 
+detect and react to anomalous or suspicious activity (e.g., unauthorized access, bot-like 
+behaviour, spoofing).*
+- **Team name** - *Mavericks*
+- **Team members (Names)** - *Varshaa Mani Venkatesh , Kaviya Sree RS , Indira S , Shri Sabarish M* 
 - **Demo Video Link** - *(Upload the Demo video on Youtube as a public or unlisted video and share the link. Google Drive uploads or any other uploads are not allowed.)*
 
 
