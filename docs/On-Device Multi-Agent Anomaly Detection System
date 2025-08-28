@@ -1,184 +1,103 @@
 On-Device Multi-Agent Anomaly Detection System
 Project for Samsung Ennovatex 2025
 
-This document contains the complete technical overview for an on-device, multi-agent system designed for real-time, behavior-based anomaly and fraud detection on mobile devices.
+This document contains the complete technical overview, architecture, and user guide for the On-Device Multi-Agent Anomaly Detection System.
 
-1. Introduction & Project Overview
+1. Approach and Uniqueness
+Our Approach
 The project addresses the need for a robust, privacy-preserving security mechanism on mobile devices. Traditional security methods often rely on static credentials (passwords, PINs) which are vulnerable to theft, or cloud-based analysis which raises privacy concerns.
 
-This system aims to create a dynamic, personalized security layer that understands the user's unique behavioral patterns to detect potential fraud, spoofing, or bot-like activity in real-time.
+Our system creates a dynamic, personalized security layer that understands a user's unique behavioral patterns to detect potential fraud, spoofing, or bot-like activity in real-time. It achieves this by building a mathematical model of the user's "normal" behavior using machine learning. An anomaly is defined as any significant deviation from this learned baseline.
 
-Core Features
-Privacy-First: All data collection, model training, and inference happen 100% on-device.
+What Makes It Unique
+The uniqueness of this solution lies in three key principles:
 
-Multi-Agent Architecture: Specialized agents (Movement, Typing) work together for robust detection.
+Fully On-Device Processing: To guarantee user privacy, every stage—from raw data collection to model inference—is executed locally on the device. No sensitive behavioral data is ever transmitted to external servers. This also ensures low-latency detection that is independent of network connectivity.
 
-Behavioral Biometrics: Learns the user's unique patterns for movement and typing, going beyond static passwords or PINs.
+Multi-Agent Architecture: Instead of a single, monolithic program, the system is architected as a collection of independent, specialized agents (e.g., Movement Agent, Typing Agent). These agents operate in parallel and report their findings to a central coordinator, creating a resilient and scalable system that can analyze multiple behavioral signals at once.
 
-Real-Time & Efficient: Built with lightweight GRU models (.tflite) for continuous background operation with minimal battery impact.
+Context-Aware Security: The system is designed to only trigger security actions (like a re-authentication prompt) when an anomaly is detected during a sensitive operation (e.g., opening a banking app). This "just-in-time" security prevents unnecessary interruptions during casual use, solving common usability problems in continuous authentication systems.
 
-Context-Aware Security: Designed to trigger security actions only during sensitive operations, preventing unnecessary interruptions.
+2. Technical Stack
+This project is built entirely on open-source software (OSS) libraries.
 
-2. System Architecture
-The system is designed as a modular, multi-agent system where each component has a distinct responsibility. This separation of concerns allows for scalability and maintainability.
+Platform: Android (Kotlin) - The native development platform for building the application.
 
-2.1. Agent Breakdown
-The initial prototype consists of three primary software components:
+Machine Learning (Training):
 
-1. Movement Agent (MovementAgent.kt)
+TensorFlow/Keras - For building and training the GRU autoencoder models in Python.
 
-Responsibility: To analyze the physical movement of the device.
+Scikit-learn - For data preprocessing, specifically using the MinMaxScaler.
 
-Data Source: The device's accelerometer (Sensor.TYPE_ACCELEROMETER).
+Pandas - For data manipulation and loading CSV files.
 
-Model: movement_model_gru.tflite, a GRU autoencoder trained on sequences of X, Y, and Z sensor readings.
+Machine Learning (On-Device):
 
-Output: A boolean status (isAnomaly) indicating if the current movement pattern deviates from the user's learned norm.
+TensorFlow Lite - The core library for running ML models efficiently on mobile devices.
 
-2. Typing Agent (TypingAgent.kt)
+TFLite Flex Delegate - A crucial component that enables the use of advanced TensorFlow operations (like those in GRUs) within the TFLite runtime.
 
-Responsibility: To analyze the user's typing rhythm.
+3. Technical Architecture
+The system is designed as a modular, multi-agent system where each component has a distinct responsibility.
 
-Data Source: A TextWatcher on an EditText element, which measures the time in milliseconds between each key press.
+3.1. Agent Breakdown
+Movement Agent (MovementAgent.kt): Analyzes the physical movement of the device using the accelerometer and a dedicated movement_model_gru.tflite.
 
-Model: typing_model.tflite, a GRU autoencoder trained on sequences of keystroke latencies.
+Typing Agent (TypingAgent.kt): Analyzes the user's typing rhythm using a TextWatcher and a typing_model.tflite.
 
-Output: A boolean status (isAnomaly) indicating if the typing rhythm is abnormal.
+Coordinator Agent (Coordinator.kt): Acts as the central decision-making brain, receiving anomaly signals from all agents and applying risk assessment logic.
 
-3. Coordinator Agent (Coordinator.kt)
+3.2. Data and Logic Flow
+Data Sensing: The MainActivity captures raw data from device sensors.
 
-Responsibility: To act as the central decision-making brain of the system.
+Data Delegation: The raw data is passed to the Coordinator.
 
-Inputs: Receives the anomaly status from all active agents (Movement and Typing).
+Agent Processing: The Coordinator forwards the data to the appropriate agent.
 
-Logic: Contains the risk assessment logic. It evaluates the agent signals within a specific context (e.g., is a sensitive app open?) to decide if a security action is necessary.
+On-Device Inference: Each agent maintains a sequence of recent data. When a sequence is full, it is fed into the agent's .tflite model for inference.
 
-Output: Triggers a system response, such as a re-authentication prompt.
+Anomaly Reporting: Each agent calculates the model's reconstruction error and compares it to a pre-defined threshold to determine if an anomaly has occurred.
 
-2.2. Data and Logic Flow
-The system follows a clear, sequential flow from data input to security action.
+Risk Assessment & Action: The Coordinator collects the anomaly statuses and, if the context is sensitive, triggers a security response.
 
-Data Sensing: The MainActivity captures raw data from the accelerometer and the TextWatcher.
+4. Implementation Details
+4.1. Machine Learning Models
+Both agents are powered by GRU (Gated Recurrent Unit) Autoencoder models. This architecture is highly effective at learning patterns in sequential data. The models are trained to reconstruct "normal" user behavior with low error. When presented with an anomalous pattern, the reconstruction error spikes, signaling an anomaly. The final models are converted to the .tflite format with quantization to ensure high performance and a small footprint on the device.
 
-Data Delegation: The raw data is immediately passed to the Coordinator.
+4.2. Android Application
+The application is built natively in Kotlin. The core logic is separated into classes for each agent and the coordinator, with MainActivity.kt serving as the UI and event handler. The TFLite Interpreter is initialized with a FlexDelegate, which is critical for enabling the advanced operations required by the GRU models.
 
-Agent Processing: The Coordinator forwards the data to the appropriate agent (MovementAgent or TypingAgent).
+5. Installation Instructions
+Clone the project repository from GitHub.
 
-On-Device Inference: Each agent maintains a sequence of recent data. When the sequence is full, it is fed into the agent's dedicated .tflite model for inference.
+Open the project in the latest version of Android Studio.
 
-Anomaly Reporting: Each agent calculates the reconstruction error and compares it to its pre-defined threshold to determine if an anomaly has occurred.
+Ensure you have the Android SDK for API level 33 or higher installed.
 
-Risk Assessment: The Coordinator collects the boolean anomaly statuses from the agents.
+The project uses Gradle for dependency management. Allow Android Studio to sync and download all required libraries as defined in the app/build.gradle.kts file.
 
-Decision & Action: The Coordinator applies its risk assessment rules. If the risk is deemed high, it triggers a security response (e.g., a biometric prompt). Otherwise, it takes no action.
+Connect a physical Android device with Developer Options and USB Debugging enabled.
 
-3. Machine Learning Model Training
-Both the Movement and Typing agents are powered by custom-trained GRU (Gated Recurrent Unit) Autoencoder models. This section details the end-to-end pipeline for creating these models. The entire process is executed within a Google Colab notebook using Python and TensorFlow/Keras.
+Build and run the application on the device.
 
-3.1. Data Collection
-Movement Data: Raw accelerometer data (X, Y, Z values) is collected from the Android application by logging SensorEvent values. This data is cleaned and saved as a 3-column CSV file (normal_data.csv).
+6. User Guide
+The application is designed to run in the background with no direct user interaction required for its security functions.
 
-Typing Data: Keystroke latency data (milliseconds between key presses) is collected using a TextWatcher in the app. This is cleaned and saved as a single-column CSV file (typing_data.csv).
+Training Phase (Implicit): Upon first use, the app begins to silently learn the user's unique movement and typing patterns. For a robust baseline, the user should use their device normally for a few days.
 
-3.2. Data Preprocessing
-Before training, the raw data is transformed into a format suitable for the GRU model.
+Monitoring Phase: The app runs a persistent background service, continuously monitoring sensor and typing data.
 
-Scaling: A MinMaxScaler from Scikit-learn is used to scale all numerical data to a range of [0, 1]. This normalization helps the model train more effectively. The scaler's parameters (min_, range_) are saved in a model_config.json file for use during inference in the Android app.
+Anomaly Detection: When an anomaly is detected (e.g., a different person is typing), the system logs it.
 
-Sequencing: The scaled data points are grouped into overlapping sequences of a fixed length (e.g., 15 for movement, 10 for typing). The model learns the patterns within these sequences.
+Security Action: If an anomaly is detected while the user is performing a sensitive action (e.g., opening a banking app), the system will present a biometric prompt (fingerprint/face) to re-verify the user's identity before allowing access.
 
-3.3. GRU Autoencoder Architecture
-The model is a standard autoencoder designed for sequential data:
+7. Salient Features
+Continuous, Passive Authentication: Verifies user identity continuously without requiring active input.
 
-Encoder: Two GRU layers that read the input sequence and compress it into a low-dimensional latent vector. This vector represents the "essence" of the behavioral pattern.
+Privacy by Design: All user data remains on the device, ensuring maximum privacy.
 
-RepeatVector: This layer repeats the latent vector to prepare it for the decoder.
+High Efficiency: Optimized GRU models and native code ensure minimal impact on battery life and device performance.
 
-Decoder: Two GRU layers that attempt to reconstruct the original input sequence from the latent vector.
+Detects Multiple Threat Vectors: Effective against both robotic bots (which are too perfect) and human spoofers (who are imperfect in the wrong way).
 
-The model is compiled with the adam optimizer and mae (Mean Absolute Error) as the loss function.
-
-3.4. Training and Threshold Calculation
-Training: The model is trained to minimize the reconstruction error (the mae loss). It learns to become very good at reconstructing the "normal" behavioral sequences it was trained on.
-
-Threshold Calculation: After training, the model is used to predict on the training data itself. The reconstruction error is calculated for every sequence. The anomaly threshold is then set to a value slightly higher than the average or maximum error observed during training (e.g., mean + 2 * standard_deviation). This threshold is saved in the model_config.json file.
-
-3.5. Model Conversion
-The final trained Keras model is converted into a highly efficient format for on-device inference using the tf.lite.TFLiteConverter. The conversion applies default optimizations, including quantization, to significantly reduce the model's size and improve performance on mobile hardware. The final output is a .tflite file.
-
-4. Android Implementation
-The system is implemented as a native Android application using Kotlin. This section details the key components of the implementation.
-
-4.1. Dependencies
-The following dependencies are required in the app/build.gradle.kts file to support on-device inference with advanced models:
-
-// Core TFLite library
-implementation("org.tensorflow:tensorflow-lite:2.14.0")
-// Support library for easier data handling (optional but recommended)
-implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
-// Library for reading model metadata (optional)
-implementation("org.tensorflow:tensorflow-lite-metadata:0.4.4")
-// CRITICAL: Enables advanced TensorFlow operations (like those in GRU) to run
-implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.14.0")
-
-4.2. Asset Integration
-All necessary machine learning assets are placed in the app/src/main/assets directory:
-
-movement_model_gru.tflite: The trained model for the Movement Agent.
-
-typing_model.tflite: The trained model for the Typing Agent.
-
-model_config.json: A JSON file containing the sequence length, anomaly threshold, and scaler parameters for the movement model.
-
-4.3. Code Structure
-The application logic is refactored from a single MainActivity into a clean, multi-agent architecture.
-
-MainActivity.kt: The main entry point of the app. It is responsible for initializing the UI, the Coordinator, and forwarding sensor/typing events. It does not contain any core agent logic itself.
-
-MovementAgent.kt: A dedicated class that manages the movement model, data sequencing, scaling, and inference.
-
-TypingAgent.kt: A dedicated class for the typing model, handling latency sequencing and inference.
-
-Coordinator.kt: The central class that holds instances of the agents and orchestrates the flow of data and decisions.
-
-4.4. TFLite Interpreter Initialization
-The TFLite Interpreter is initialized with a FlexDelegate. This is a critical step that enables the app to run models containing advanced TensorFlow operations that are not included in the standard TFLite runtime.
-
-// Inside the initialization logic
-val options = Interpreter.Options().apply {
-    addDelegate(FlexDelegate())
-}
-
-tfliteMovement = Interpreter(loadModelFile("movement_model_gru.tflite"), options)
-
-This ensures that the GRU models can be loaded and executed without crashing.
-
-5. Risk Assessment & Edge Cases
-A simple anomaly detection system is prone to false positives in real-world scenarios. This system mitigates this by separating anomaly detection from risk assessment. The Coordinator agent is responsible for this assessment.
-
-5.1. The "Friend Problem" - Context-Aware Security
-A common edge case is a trusted individual (e.g., a friend or family member) using the phone. Their behavior will rightfully be flagged as anomalous by the agents. However, locking the phone or showing a security alert would be a poor user experience.
-
-Solution: The system only triggers a high-priority security response when an anomaly is detected in a sensitive context.
-
-Low-Risk Context: Browsing social media, watching videos, playing a game.
-
-High-Risk Context: Opening a banking app, accessing a password manager, changing a system setting, or making a payment.
-
-The Coordinator maintains a list of sensitive app package names. If an anomaly is detected but the user is in a low-risk app, the event is logged silently. If the anomaly occurs in a high-risk app, the Coordinator immediately triggers a re-authentication prompt using Android's BiometricPrompt.
-
-5.2. Handling Noisy Data
-A single erratic movement (e.g., bumping the phone) could be flagged as an anomaly. Acting on a single anomalous event would lead to instability.
-
-Solution: The system can be configured to require a threshold of consecutive anomalies before escalating the risk level. For example, the Coordinator might require three consecutive anomalous movement sequences before it considers the movement agent's signal to be valid.
-
-5.3. Future Work & Planned Improvements
-Continuous Learning: To adapt to a user's slowly changing habits, the app will implement on-device fine-tuning. It will silently collect new "normal" data points and use them to periodically update the TFLite models while the device is idle and charging.
-
-Power Management: The system will use Android's BatteryManager to monitor the device's battery level. In a low-power state, the frequency of sensor polling and inference can be reduced to conserve energy.
-
-Additional Agents: The modular architecture allows for the easy addition of new agents in the future, such as:
-
-App Usage Agent: To model which apps are used and at what times of day.
-
-Location Agent: To understand patterns related to common locations like "Home" and "Work".
+Scalable Architecture: The multi-agent design allows for easy addition of new behavioral agents (e.g., App Usage, Location) in the future.
